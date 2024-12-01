@@ -1,0 +1,48 @@
+# Day 1
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.14.2"}
+])
+```
+
+## Section
+
+```elixir
+locs = Kino.Input.textarea("location IDs")
+```
+
+```elixir
+loc_ids =
+  locs
+  |> Kino.Input.read()
+  |> String.split("\n")
+  |> Stream.map(fn pair ->
+    pair
+    |> String.split("   ")
+    |> Enum.map(&String.to_integer/1)
+  end)
+  |> Stream.zip()
+  |> Stream.map(&Tuple.to_list/1)
+  |> Enum.map(&Enum.sort/1)
+```
+
+## Part 1
+
+```elixir
+loc_ids
+|> Enum.zip_with(fn [l, r] -> abs(l - r) end)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+[left, right] = loc_ids
+
+freqs = Enum.frequencies(right)
+
+left
+|> Enum.map(fn i -> i * Map.get(freqs, i, 0) end)
+|> Enum.sum()
+```
