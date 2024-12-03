@@ -1,0 +1,84 @@
+# Untitled notebook
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.14.2"}
+])
+```
+
+## Section
+
+```elixir
+instructions = Kino.Input.textarea("instructions")
+```
+
+## Part 1
+
+```elixir
+pattern = ~r/mul\((?<l>\d+),(?<r>\d+)\)/
+
+instructions
+|> Kino.Input.read()
+|> then(&Regex.scan(pattern, &1, capture: :all))
+|> Enum.map(fn [_full_pattern, l, r] ->
+  String.to_integer(l) * String.to_integer(r)
+end)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+defmodule Part2 do
+  @moduledoc "I wanted to use python for today but part 2 was much better suited to Elixir"
+
+  @pattern ~r/\Amul\((?<l>\d+),(?<r>\d+)\)/
+
+  def running(""), do: 0
+
+  def running("don't()" <> rest) do
+    not_running(rest)
+  end
+
+  def running("mul(" <> rest = text) do
+    with %{"l" => l, "r" => r} <- Regex.named_captures(@pattern, text),
+         {left, ""} <- Integer.parse(l),
+         {right, ""} <- Integer.parse(r) do
+      left * right + running(rest)
+    else
+      _ -> running(rest)
+    end
+  end
+
+  def running(<<_::utf8>> <> rest), do: running(rest)
+
+  def mul_first_digit("," <> rest, digits), do: {parse_digits(digits), rest}
+
+  def mul_first_digit(<<num::utf8>> <> rest, digits) do
+    mul_first_digit(rest, [<<num>> | digits])
+  end
+
+  def mul_second_digit(")" <> rest, digits), do: {parse_digits(digits), rest}
+
+  def mul_second_digit(<<num::utf8>> <> rest, digits) do
+    mul_first_digit(rest, [<<num>> | digits])
+  end
+
+  def not_running(""), do: 0
+  def not_running("do()" <> rest), do: running(rest)
+  def not_running(<<_::utf8>> <> rest), do: not_running(rest)
+
+  def parse_digits(iolist) do
+    iolist
+    |> Enum.reverse()
+    |> IO.iodata_to_binary()
+    |> String.to_integer()
+  end
+end
+```
+
+```elixir
+instructions
+|> Kino.Input.read()
+|> Part2.running()
+```
