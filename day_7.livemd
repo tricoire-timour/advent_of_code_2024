@@ -1,0 +1,71 @@
+# Day 7
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.14.2"}
+])
+```
+
+## Section
+
+```elixir
+eqs = Kino.Input.textarea("equations")
+```
+
+```elixir
+defmodule Day7 do
+  def concat(n1, n2) do
+    String.to_integer(Integer.to_string(n1) <> Integer.to_string(n2))
+  end
+
+  def apply_operators_list(operators, second) do
+    fn n ->
+      Enum.map(operators, fn func ->
+        func.(n, second)
+      end)
+    end
+  end
+
+  def abstract_solution(input_string, operators) do
+    input_string
+    |> String.split("\n")
+    |> Enum.map(fn line ->
+      [target_str, numbers_str] = String.split(line, ": ")
+      {target, ""} = Integer.parse(target_str)
+
+      [first | numbers] =
+        numbers_str
+        |> String.split()
+        |> Enum.map(&String.to_integer/1)
+
+      numbers
+      |> Enum.reduce([first], fn new_number, progresses ->
+        Enum.flat_map(progresses, apply_operators_list(operators, new_number))
+        # Enum.flat_map(progresses, &[&1 + new_number, &1 * new_number])
+      end)
+      |> Enum.filter(&(&1 == target))
+      |> case do
+        [] -> 0
+        [numb | _] -> numb
+      end
+    end)
+    |> Enum.sum()
+  end
+end
+```
+
+## Part 1
+
+```elixir
+eqs
+|> Kino.Input.read()
+|> Day7.abstract_solution([&+/2, &*/2])
+```
+
+## Part 2
+
+```elixir
+eqs
+|> Kino.Input.read()
+|> Day7.abstract_solution([&+/2, &*/2, &Day7.concat/2])
+```
