@@ -1,0 +1,116 @@
+# Day 8
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.14.2"}
+])
+```
+
+## Generic
+
+```elixir
+antennas = Kino.Input.textarea("Antennas:")
+```
+
+```elixir
+defmodule Day8 do
+  def posn_add({r1, c1}, {r2, c2}) do
+    {r1 + r2, c1 + c2}
+  end
+
+  def posn_diff({r1, c1}, {r2, c2}) do
+    {r1 - r2, c1 - c2}
+  end
+
+  def single_antinode(p1, p2) do
+    posn_add(p1, posn_diff(p1, p2))
+  end
+
+  def antinodes(p1, p2) do
+    [single_antinode(p1, p2), single_antinode(p2, p1)]
+  end
+
+  def all_antinodes(points) do
+    for i <- points, j <- points, i != j do
+      {i, j}
+    end
+    |> Enum.flat_map(fn {p1, p2} -> antinodes(p1, p2) end)
+    |> Enum.uniq()
+  end
+
+  def in_bounds({r, c}, {max_row, max_col}) do
+    r >= 0 and r <= max_row and c >= 0 and c <= max_col
+  end
+
+  def directional_antinodes(p1, p2, bounds) do
+    new_point = single_antinode(p1, p2)
+
+    if in_bounds(new_point, bounds) do
+      [new_point | directional_antinodes(new_point, p1, bounds)]
+    else
+      []
+    end
+  end
+
+  def line_antinodes(p1, p2, bounds) do
+    directional_antinodes(p1, p2, bounds) ++ directional_antinodes(p2, p1, bounds)
+  end
+
+  def all_line_antinodes(points, bounds) do
+    for i <- points, j <- points, i != j do
+      {i, j}
+    end
+    |> Enum.flat_map(fn {p1, p2} -> line_antinodes(p1, p2, bounds) end)
+    |> then(&(points ++ &1))
+    |> Enum.uniq()
+  end
+end
+```
+
+```elixir
+{antennas, max_row, max_col} =
+  antennas
+  |> Kino.Input.read()
+  |> String.split("\n")
+  |> Enum.with_index()
+  |> Enum.reduce({%{}, 0, 0}, fn {line, row}, map ->
+    line
+    |> String.graphemes()
+    |> Enum.with_index()
+    |> Enum.reduce(map, fn
+      {".", col}, {map, _, _} ->
+        {map, row, col}
+
+      {freq, col}, {map, _, _} ->
+        {Map.update(map, freq, [{row, col}], &[{row, col} | &1]), row, col}
+    end)
+  end)
+```
+
+## Part 1
+
+I heard today was good for functional programming...
+
+```elixir
+antennas
+|> Enum.flat_map(fn {_freq, antennas} ->
+  antennas
+  |> Day8.all_antinodes()
+  |> Enum.filter(fn point ->
+    Day8.in_bounds(point, {max_row, max_col})
+  end)
+end)
+|> Enum.uniq()
+|> length()
+```
+
+## Part 2
+
+```elixir
+antennas
+|> Enum.flat_map(fn {_freq, antennas} ->
+  Day8.all_line_antinodes(antennas, {max_row, max_col})
+end)
+|> Enum.uniq()
+|> length()
+```
