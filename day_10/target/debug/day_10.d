@@ -1,0 +1,1 @@
+C:\Users\timcd\Documents\personal_code\advent_of_code_2024\day_10\target\debug\day_10.exe: C:\Users\timcd\Documents\personal_code\advent_of_code_2024\day_10\src\input.txt C:\Users\timcd\Documents\personal_code\advent_of_code_2024\day_10\src\main.rs

@@ -1,0 +1,126 @@
+# Day 12
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.14.2"}
+])
+```
+
+## General
+
+```elixir
+garden = Kino.Input.textarea("Garden")
+```
+
+## Part 1
+
+```elixir
+defmodule Garden do
+  def neighbours({r, c}) do
+    [{r - 1, c}, {r + 1, c}, {r, c - 1}, {r, c + 1}]
+  end
+  
+  def full_region(garden_map, so_far, varietal) do
+    new_chunk = so_far
+    |> Enum.flat_map(&neighbours/1)
+    |> Enum.filter(fn coord ->
+      garden_map[coord] == varietal and coord not in so_far
+    end)
+    |> MapSet.new()
+    |> MapSet.union(so_far)
+    
+    if new_chunk == so_far do
+      new_chunk
+    else
+      full_region(garden_map, new_chunk, varietal)
+    end
+    
+  end
+  
+  def garden_regions(garden_map, visited) do
+    garden_map
+    |> Map.to_list()
+    |> Enum.find(fn {coord, _} ->
+        coord not in visited
+    end)
+    |> case do
+      {seed, varietal} ->
+            new_chunk = full_region(garden_map, MapSet.new([seed]), varietal)
+
+            [{new_chunk, varietal} | garden_regions(garden_map, MapSet.union(visited, new_chunk))]
+      nil -> []
+    end
+  end
+
+  def perimeter(chunk) do
+    chunk
+    |> Enum.flat_map(&neighbours/1)
+    |> Enum.reject(&(&1 in chunk))
+  end
+
+
+  def fence_cost(chunk) do
+    MapSet.size(chunk) * length(perimeter(chunk))
+  end
+end
+```
+
+```elixir
+garden_regions = garden
+|> Kino.Input.read()
+|> String.split("\n")
+|> Enum.with_index()
+|> Enum.flat_map(fn {line, row} ->
+  line
+  |> String.graphemes()
+  |> Enum.with_index()
+  |> Enum.map(fn {char, col} ->
+    {{row, col}, char}
+  end)
+end)
+|> Map.new()
+|> Garden.garden_regions(MapSet.new())
+
+garden_regions
+|> Enum.map(fn {chunk, _var} ->
+  Garden.fence_cost(chunk)
+end)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+garden_regions
+|> Enum.map(fn {region, _varietal} ->
+  region
+  |> Enum.flat_map(fn {r, c} ->
+    [
+      [{r, c}, {r - 1, c - 1}, {r - 1, c}, {r, c - 1}],
+      [{r, c}, {r - 1, c}, {r - 1, c + 1}, {r, c + 1}],
+      [{r, c}, {r, c - 1}, {r + 1, c - 1}, {r + 1, c}],
+      [{r, c}, {r, c + 1}, {r + 1, c}, {r + 1, c + 1}],
+    ]
+    |> Enum.map(&MapSet.new/1)
+  end)
+  |> Enum.uniq()
+  |> Enum.flat_map(fn square ->
+    square
+    |> Enum.filter(&(&1 not in region))
+    |> case do
+      [{r1, c1}, {r2, c2}] = me -> 
+        if r1 != r2 and c1 != c2 do
+          [me, me] # two outer corners
+        else
+          []
+        end
+      [] -> []
+      list -> [list]
+    end
+  end)
+  |> length()
+  |> then(&(&1 * MapSet.size(region)))
+  # |> then(&{varietal, &1, MapSet.size(region), &1 * MapSet.size(region)})
+end)
+|> Enum.sum()
+```

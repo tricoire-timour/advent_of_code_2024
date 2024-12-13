@@ -1,0 +1,63 @@
+# Day 11
+
+```elixir
+Mix.install([:kino])
+```
+
+## Stones of Pluto
+
+```elixir
+stones = Kino.Input.textarea("initial stones")
+```
+
+```elixir
+defmodule Stones do
+  @moduledoc "I'm aware that this module doesn't strictly need to exist, 
+  but it's more readable this way"
+
+  def blink_once(0), do: [1]
+
+  def blink_once(n) do
+    num_digits_minus_1 =
+      n
+      |> :math.log10()
+      |> trunc()
+
+    if rem(num_digits_minus_1, 2) == 1 do
+      splitter = 10 ** div(num_digits_minus_1 + 1, 2)
+      [div(n, splitter), rem(n, splitter)]
+    else
+      [n * 2024]
+    end
+  end
+
+  def blink(rocks) do
+    rocks
+    |> Enum.reduce(%{}, fn {number, quant}, new_stones ->
+      number
+      |> blink_once()
+      |> Enum.reduce(new_stones, fn rock, all_rocks ->
+        Map.update(all_rocks, rock, quant, &(&1 + quant))
+      end)
+    end)
+  end
+
+
+  @doc """
+  I know I could also use a reduction for the same result but I like this better.
+  """
+  def blink_n_times(stones, 0), do: stones
+  def blink_n_times(stones, n), do: blink_n_times(blink(stones), n - 1)
+end
+```
+
+```elixir
+stones
+|> Kino.Input.read()
+|> String.split()
+|> Enum.map(&String.to_integer/1)
+|> Enum.frequencies()
+|> Stones.blink_n_times(100)
+|> Map.values()
+|> Enum.sum()
+```
