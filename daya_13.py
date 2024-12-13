@@ -1329,7 +1329,6 @@ Prize: X=2225, Y=5755
 
 
 def is_reasonable_int(n):
-    integer = round(n)
     return abs(n - round(n)) < 0.01
 
 
